@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 # Don't forget to import dj-database-url at the beginning of the file
-import dj_database_url
 from pathlib import Path
+import dj_database_url
 
 import environ
 env = environ.Env()
