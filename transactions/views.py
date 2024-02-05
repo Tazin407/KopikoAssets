@@ -14,6 +14,7 @@ from django.db.models import Sum
 from .models import Bank, Transfer
 from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.template.loader import render_to_string
+
 from transactions.forms import (
     DepositForm,
     WithdrawForm,
@@ -34,12 +35,13 @@ from transactions.models import Transaction
         # send_email.send()
         
 
-def send_email(user, amount, transaction, to_email):
+def send_email(user, amount, transaction,adjective, to_email):
     mail_subject="Transaction Message"
     message= render_to_string('email_message.html', {
         "user": user,
         "amount" : amount,
         "transaction": transaction,
+        "adjective": adjective
     })
     send_email= EmailMultiAlternatives(mail_subject,'', to=[to_email] )
     send_email.attach_alternative(message, 'text/html')
@@ -97,7 +99,7 @@ class DepositView(TransactionCreateMixin):
             f'{"{:,.2f}".format(float(amount))}$ was deposited to your account successfully'
         )
         
-        send_email(self.request.user, amount, 'diposit', self.request.user.email)
+        send_email(self.request.user, amount, 'diposit','to', self.request.user.email)
 
         return super().form_valid(form)
 
@@ -124,7 +126,7 @@ class WithdrawView(TransactionCreateMixin):
             self.request,
             f'Successfully withdrawn {"{:,.2f}".format(float(amount))}$ from your account'
         )
-        send_email(self.request.user, amount, 'withdraw', self.request.user.email)
+        send_email(self.request.user, amount, 'withdraw', 'from', self.request.user.email)
 
         return super().form_valid(form)
 
@@ -268,6 +270,10 @@ class TransferView(LoginRequiredMixin,View):
                 )
                 
                 messages.success(request, f"Transfer Successful")
+                
+                send_email(self.request.user, amount, 'transfer','from', self.request.user.email)
+                send_email(to_account, amount, 'transfer','to',to_account.email )
+                
                 return redirect('profile')
             
         return render(request, self.template_name, {'form': form})
