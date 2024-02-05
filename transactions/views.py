@@ -22,6 +22,29 @@ from transactions.forms import (
 )
 from transactions.models import Transaction
 
+
+        # message= render_to_string('email_message.html', {
+        #     "user": self.request.user,
+        #     "amount" : amount,
+        #     "transaction" : diposit,
+        # })
+        # to_email= self.request.user.email
+        # send_email= EmailMultiAlternatives(mail_subject, '', to=[to_email])
+        # send_email.attach_alternative(message, 'text/html')
+        # send_email.send()
+        
+
+def send_email(user, amount, transaction, to_email):
+    mail_subject="Transaction Message"
+    message= render_to_string('email_message.html', {
+        "user": user,
+        "amount" : amount,
+        "transaction": transaction,
+    })
+    send_email= EmailMultiAlternatives(mail_subject,'', to=[to_email] )
+    send_email.attach_alternative(message, 'text/html')
+    send_email.send()
+
 class TransactionCreateMixin(LoginRequiredMixin, CreateView):
     template_name = 'transaction_form.html'
     model = Transaction
@@ -73,16 +96,9 @@ class DepositView(TransactionCreateMixin):
             self.request,
             f'{"{:,.2f}".format(float(amount))}$ was deposited to your account successfully'
         )
+        
+        send_email(self.request.user, amount, 'diposit', self.request.user.email)
 
-        mail_subject="Diposite Message"
-        message= render_to_string('email_message.html', {
-            "user": self.request.user,
-            "amount" : amount,
-        })
-        to_email= self.request.user.email
-        send_email= EmailMultiAlternatives(mail_subject, '', to=[to_email])
-        send_email.attach_alternative(message, 'text/html')
-        send_email.send()
         return super().form_valid(form)
 
 
@@ -108,6 +124,7 @@ class WithdrawView(TransactionCreateMixin):
             self.request,
             f'Successfully withdrawn {"{:,.2f}".format(float(amount))}$ from your account'
         )
+        send_email(self.request.user, amount, 'withdraw', self.request.user.email)
 
         return super().form_valid(form)
 
